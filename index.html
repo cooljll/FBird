@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <canvas id="cv"></canvas>
+    <script src="js/fly.js"></script>
+    <script src="js/bird.js"></script>
+    <script src="js/sky.js"></script>
+    <script src="js/land.js"></script>
+    <script src="js/pipe.js"></script>
+    <script>
+        var cv = document.getElementById('cv');
+        cv.height = 600;
+        cv.width = 800;
+        cv.style.border = '1px solid red';
+
+        var context = cv.getContext('2d');
+        var imgsArr = ["birds", "land", "pipe1", "pipe2", "sky"];
+        var start = true;
+        Fly.LoadImage(imgsArr, function(imgList) {
+            var curFrameTime = 0;
+            var lastFrameTime = new Date();
+            var delt0 = 0;
+            var roles = [];
+            // 创建天空对象
+            var imgSky = imgList.sky;
+            for (var i = 0; i < 2; i++) {
+                var sky = new Fly.Sky({
+                    img: imgSky,
+                    ctx: context,
+                    x: i * imgSky.width
+                });
+                roles.push(sky);
+            }
+            // 创建6组管道对象
+            for (var i = 0; i < 6; i++) {
+                var pipe = new Fly.Pipe({
+                    imgTop: imgList.pipe2,
+                    imgBottom: imgList.pipe1,
+                    ctx: context,
+                    x: i * imgList.pipe1.width * 3,
+                    pipeSpace: 150
+                });
+
+                roles.push(pipe);
+            }
+
+            //创建陆地对象
+            var imgLand = imgList.land;
+            for (var i = 0; i < 4; i++) {
+                var land = new Fly.Land({
+                    img: imgLand,
+                    ctx: context,
+                    x: i * imgLand.width,
+                    y: imgSky.height - imgLand.height
+                });
+                roles.push(land);
+            }
+            //创建小鸟对象
+            var bird = new Fly.Bird({
+                img: imgList.birds,
+                ctx: context
+            });
+            (function render() {
+                // 保存绘制状态
+                context.save();
+                context.beginPath(); //开启新路径 
+                curFrameTime = new Date();
+                delta = curFrameTime - lastFrameTime;
+                lastFrameTime = curFrameTime;
+                // 渲染游戏中角色
+                roles.forEach(function(role) {
+                    role.draw(delta);
+                });
+                // 绘制小鸟
+                bird.draw(delta);
+                //碰撞检测
+                if (bird.y <= 0 || bird.y >= (imgSky.height - imgLand.height) || context.isPointInPath(bird.x, bird.y)) {
+                    start = false;
+                }
+                // 恢复状态
+                context.restore();
+                if (start) {
+                    requestAnimationFrame(render);
+                }
+            })();
+            cv.addEventListener('click', function() {
+                bird.changeSpeed(-0.3);
+            });
+
+        });
+    </script>
+</body>
+
+</html>
